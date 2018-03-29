@@ -48,6 +48,15 @@ class Education(Institution):
     def __repr__(self):
         return "{degree} at {company} from {from_date} to {to_date}".format( from_date = self.from_date, to_date = self.to_date, degree = self.degree, company = self.institution_name)
 
+class Skill():
+    def __init__(self, skill_title = None, skill_endorsements = None):
+        self.skill_title = skill_title
+        self.skill_endorsements = skill_endorsements
+
+    def __repr__(self):
+        return "{skill_title} - {skill_endorsements} endorsements".format( skill_title = self.skill_title, skill_endorsements = self.skill_endorsements)
+
+
 class Scraper(object):
     driver = None
 
