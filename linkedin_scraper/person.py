@@ -5,21 +5,23 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from .functions import time_divide
-from .objects import Experience, Education, Scraper
+from .objects import Experience, Education, Skill, Scraper
 import os
 
 class Person(Scraper):
     name = None
     experiences = []
     educations = []
+    skills = []
     also_viewed_urls = []
     linkedin_url = None
 
-    def __init__(self, linkedin_url = None, name = None, experiences = [], educations = [], driver = None, get = True, scrape = True):
+    def __init__(self, linkedin_url = None, name = None, experiences = [], educations = [], skills = [], driver = None, get = True, scrape = True):
         self.linkedin_url = linkedin_url
         self.name = name
         self.experiences = experiences
         self.educations = educations
+        self.skills = skills
 
         if driver is None:
             try:
@@ -31,10 +33,8 @@ class Person(Scraper):
                 driver = webdriver.Chrome(driver_path)
             except:
                 driver = webdriver.Chrome()
-
         if get:
             driver.get(linkedin_url)
-
         self.driver = driver
 
         if scrape:
@@ -46,6 +46,9 @@ class Person(Scraper):
 
     def add_education(self, education):
         self.educations.append(education)
+
+    def add_skill(self, skill):
+        self.skills.append(skill)
 
     def scrape(self, close_on_complete = True):
         if self.is_signed_in():
@@ -100,9 +103,25 @@ class Person(Scraper):
                 education.institution_name = university
                 self.add_education(education)
 
+        driver.execute_script("window.scrollTo(0, Math.ceil(document.body.scrollHeight/1.6));")
+
+        _ = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "pv-skills-section__additional-skills")))
+
+        driver.execute_script("document.querySelector('.pv-skills-section__additional-skills').click();")
+
+        # get skill
+        skl = driver.find_element_by_class_name("pv-skill-categories-section")
+        for skill in skl.find_elements_by_class_name("pv-skill-category-entity__skill-wrapper"):
+            skill_title = skill.find_element_by_class_name("pv-skill-category-entity__name").text
+            try:
+                skill_endorsements = skill.find_element_by_class_name("pv-skill-category-entity__endorsement-count").text
+            except:
+                skill_endorsements = None
+            skill = Skill( skill_title = skill_title , skill_endorsements = skill_endorsements)
+            self.add_skill(skill)
+
         if close_on_complete:
             driver.close()
-
 
     def scrape_not_logged_in(self, close_on_complete=True, retry_limit = 10):
         driver = self.driver
@@ -149,6 +168,6 @@ class Person(Scraper):
             driver.close()
 
     def __repr__(self):
-        return "{name}\n\nExperience\n{exp}\n\nEducation\n{edu}".format(name = self.name, exp = self.experiences, edu = self.educations)
+        return "{name}\n\nExperience\n{exp}\n\nEducation\n{edu}\n\nSkill\n{skl}".format(name = self.name, exp = self.experiences, edu = self.educations, skl = self.skills)
 
 
